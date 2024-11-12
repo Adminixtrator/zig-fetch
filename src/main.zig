@@ -5,6 +5,31 @@ const heap = std.heap;
 const Client = http.Client;
 const RequestOptions = Client.RequestOptions;
 
+const Token = struct {
+    address: []const u8,
+    address_label: ?[]const u8,
+    name: []const u8,
+    symbol: []const u8,
+    decimals: []const u8,
+    logo: []const u8,
+    logo_hash: ?[]const u8,
+    thumbnail: []const u8,
+    total_supply: []const u8,
+    total_supply_formatted: []const u8,
+    block_number: []const u8,
+    validated: u8,
+    created_at: []const u8,
+    possible_spam: bool,
+    verified_contract: bool,
+    security_score: ?u8,
+};
+
+const PairData = struct {
+    token0: Token,
+    token1: Token,
+    pairAddress: []const u8,
+};
+
 const Todo = struct {
     userId: usize,
     id: usize,
@@ -83,35 +108,42 @@ pub fn main() !void {
 
     // GET request
     {
-        const get_url = "https://jsonplaceholder.typicode.com/todos/1";
+        const get_url = "YOUR_URL";
 
-        const res = try req.get(get_url, &.{});
+        var headers = [_]http.Header{
+            http.Header{
+                .name = "KEY",
+                .value = "VALUE"
+            }
+        };
+        const res = try req.get(get_url, &headers);
         const body = try req.body.toOwnedSlice();
         defer req.allocator.free(body);
 
         if (res.status != .ok) {
-            std.log.err("GET request failed - {s}\n", .{body});
-            std.os.exit(1);
+            std.log.err("GET request failed - {s}\n", .{body});            
         }
 
-        const parsed = try std.json.parseFromSlice(Todo, gpa, body, .{});
+        const parsed = try std.json.parseFromSlice(PairData, gpa, body, .{});
         defer parsed.deinit();
 
-        const todo = Todo{
-            .userId = parsed.value.userId,
-            .id = parsed.value.id,
-            .title = parsed.value.title,
-            .completed = parsed.value.completed,
-        };
+        // const todo = Todo{
+        //     .userId = parsed.value.userId,
+        //     .id = parsed.value.id,
+        //     .title = parsed.value.title,
+        //     .completed = parsed.value.completed,
+        // };
 
-        std.debug.print(
-            \\ GET response body struct -
-            \\ user ID - {d}
-            \\ id {d}
-            \\ title {s}
-            \\ completed {}
-            \\
-        , .{ todo.userId, todo.id, todo.title, todo.completed });
+        // std.debug.print(
+        //     \\ GET response body struct -
+        //     \\ user ID - {d}
+        //     \\ id {d}
+        //     \\ title {s}
+        //     \\ completed {}
+        //     \\
+        // , .{ todo.userId, todo.id, todo.title, todo.completed });
+
+        std.debug.print("Parsed Data: {s}", .{parsed.value.pairAddress});
     }
 
     // POST request
@@ -133,7 +165,6 @@ pub fn main() !void {
 
         if (res.status != .created) {
             std.log.err("POST request failed - {?s}\n", .{body});
-            std.os.exit(1);
         }
 
         std.debug.print("POST response body - {s}\n", .{body});
